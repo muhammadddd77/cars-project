@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ-панель — AutoDealer CRM</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Axios CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Styles -->
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+
+  <!-- ВЕРХНЯЯ ШАПКА АДМИНИСТРАТОРА -->
+  <header class="admin-header">
+    <div class="admin-header-content">
+      <div class="admin-logo-area">
+        <div class="logo-badge">🚗</div>
+        <div>
+          <span class="logo-title">AutoDealer</span>
+          <span class="admin-tag">ADMIN CRM</span>
+        </div>
+      </div>
+
+      <div class="admin-nav-actions">
+        <!-- Кнопка перехода на витрину клиента -->
+        <a href="../client/client.html" class="btn-nav btn-client-view" title="Перейти на витрину клиента">
+          👁️ Открыть витрину
+        </a>
+
+        <!-- Имя администратора -->
+        <div class="btn-nav" id="adminUserBadge">
+          <span>🛡️</span>
+          <span id="adminName">Администратор</span>
+        </div>
+
+        <!-- Переключатель темы -->
+        <button id="themeToggleBtn" class="btn-nav" type="button" title="Переключить тему">
+          <span id="themeIcon">🌙</span>
+        </button>
+
+        <!-- Кнопка Выход -->
+        <button id="logoutBtn" class="btn-nav" type="button" title="Выйти из системы">
+          🚪 Выйти
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ОСНОВНОЙ КОНТЕНТ -->
+  <main class="dashboard-container">
+
+    <!-- КАРТОЧКИ СТАТИСТИКИ -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>Всего авто в базе</h3>
+          <div id="statTotalCars" class="stat-number">0</div>
+        </div>
+        <div class="stat-icon">🚘</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>Предложения дня</h3>
+          <div id="statDayOffers" class="stat-number">0</div>
+        </div>
+        <div class="stat-icon">🔥</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>В наличии в салоне</h3>
+          <div id="statInStock" class="stat-number">0</div>
+        </div>
+        <div class="stat-icon">✅</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>Средняя стоимость</h3>
+          <div id="statAvgPrice" class="stat-number">0 ₽</div>
+        </div>
+        <div class="stat-icon">💰</div>
+      </div>
+    </section>
+
+    <!-- ПАНЕЛЬ ПОИСКА, ФИЛЬТРОВ И ДОБАВЛЕНИЯ -->
+    <section class="toolbar-card">
+      <div class="toolbar-filters">
+        <!-- Текстовый поиск (Search) -->
+        <div class="search-field">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="adminSearchInput" 
+            placeholder="Поиск по марке, модели, комплектации..."
+            autocomplete="off"
+          >
+        </div>
+
+        <!-- Фильтр по марке (Select Search) -->
+        <select id="adminBrandSelect" class="select-filter" aria-label="Фильтр по марке">
+          <option value="">Все марки</option>
+          <option value="Skoda">Skoda</option>
+          <option value="Volkswagen">Volkswagen</option>
+          <option value="Toyota">Toyota</option>
+          <option value="Kia">Kia</option>
+          <option value="Hyundai">Hyundai</option>
+        </select>
+
+        <!-- Чекбоксы (Checkbox) -->
+        <label class="checkbox-label">
+          <input type="checkbox" id="adminDayOfferOnly">
+          <span>Предложение дня</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="adminInStockOnly">
+          <span>В наличии</span>
+        </label>
+      </div>
+
+      <!-- Кнопка вызова модального окна добавления (POST) -->
+      <button id="openAddModalBtn" class="btn-add-car" type="button">
+        <span>+</span> Добавить авто
+      </button>
+    </section>
+
+    <!-- ТАБЛИЦА ВСЕХ АВТОМОБИЛЕЙ (GET, PUT, DELETE) -->
+    <section class="table-card">
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Фото</th>
+              <th>Марка и Модель</th>
+              <th>Комплектация</th>
+              <th>Стоимость</th>
+              <th>Кредит/мес</th>
+              <th>Статус</th>
+              <th>Акции</th>
+              <th style="width: 230px;">Действия</th>
+            </tr>
+          </thead>
+          <tbody id="carsTableBody">
+            <!-- Строки таблицы генерируются через adminDom.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ / РЕДАКТИРОВАНИЯ АВТОМОБИЛЯ (POST / PUT) -->
+  <div id="carModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modalFormTitle" class="modal-title">Добавить автомобиль</h2>
+        <button id="closeCarModalBtn" class="modal-close-btn" type="button">&times;</button>
+      </div>
+
+      <form id="carForm">
+        <!-- Скрытое поле ID для режима редактирования (PUT) -->
+        <input type="hidden" id="carIdInput" value="">
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="brandInput">Марка *</label>
+            <input type="text" id="brandInput" placeholder="Например: Skoda" required>
+          </div>
+
+          <div class="form-field">
+            <label for="modelInput">Модель *</label>
+            <input type="text" id="modelInput" placeholder="Например: Octavia" required>
+          </div>
+
+          <div class="form-field form-full">
+            <label for="trimInput">Комплектация и двигатель *</label>
+            <input type="text" id="trimInput" placeholder="Например: 1.6 MPI MT Active" required>
+          </div>
+
+          <div class="form-field">
+            <label for="priceInput">Цена (руб.) *</label>
+            <input type="number" id="priceInput" placeholder="1615000" min="0" required>
+          </div>
+
+          <div class="form-field">
+            <label for="creditPriceInput">Кредит в месяц (руб.)</label>
+            <input type="number" id="creditPriceInput" placeholder="115000" min="0">
+          </div>
+
+          <div class="form-field">
+            <label for="discountInput">Выгода по акции (руб.)</label>
+            <input type="number" id="discountInput" placeholder="300000" min="0">
+          </div>
+
+          <div class="form-field">
+            <label for="horsepowerInput">Мощность (л.с.)</label>
+            <input type="number" id="horsepowerInput" placeholder="115" min="0">
+          </div>
+
+          <div class="form-field">
+            <label for="consumptionInput">Расход топлива</label>
+            <input type="text" id="consumptionInput" placeholder="5.3 л/100км">
+          </div>
+
+          <div class="form-field">
+            <label for="maxSpeedInput">Макс. скорость (км/ч)</label>
+            <input type="number" id="maxSpeedInput" placeholder="189" min="0">
+          </div>
+
+          <div class="form-field">
+            <label for="accelerationInput">Разгон до 100 км/ч</label>
+            <input type="text" id="accelerationInput" placeholder="10.3 с.">
+          </div>
+
+          <div class="form-field">
+            <label for="yearInput">Год выпуска</label>
+            <input type="number" id="yearInput" placeholder="2023" min="2000" max="2026">
+          </div>
+
+          <div class="form-field">
+            <label for="transmissionSelect">Коробка передач</label>
+            <select id="transmissionSelect">
+              <option value="Механика">Механика</option>
+              <option value="Автомат">Автомат</option>
+              <option value="Робот (DSG)">Робот (DSG)</option>
+              <option value="Вариатор">Вариатор</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="colorInput">Цвет кузова</label>
+            <input type="text" id="colorInput" placeholder="Черный металлик">
+          </div>
+
+          <div class="form-field form-full">
+            <label for="imageInput">Ссылка на фото (URL) *</label>
+            <input type="url" id="imageInput" placeholder="https://..." required>
+          </div>
+
+          <!-- Чекбоксы подарков и статусов -->
+          <div class="form-full">
+            <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">
+              Опции, акции и спецпредложения:
+            </label>
+            <div class="checkboxes-box">
+              <label class="checkbox-label">
+                <input type="checkbox" id="isDayOfferCheckbox">
+                <span>🔥 Предложение дня</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input type="checkbox" id="inStockCheckbox">
+                <span>✅ В наличии на складе</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input type="checkbox" id="equipmentGiftCheckbox">
+                <span>🎁 Оборудование в подарок</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input type="checkbox" id="kaskoGiftCheckbox">
+                <span>🛡️ КАСКО в подарок</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input type="checkbox" id="tiresGiftCheckbox">
+                <span>🛞 Комплект резины в подарок</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-field form-full">
+            <label for="descriptionInput">Описание автомобиля</label>
+            <textarea id="descriptionInput" rows="3" placeholder="Краткое описание преимуществ комплектации..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelCarModalBtn" class="btn-secondary">Отмена</button>
+          <button type="submit" class="btn-primary" id="saveCarBtn">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО ПРОСМОТРА ИНФОРМАЦИИ (INFO) -->
+  <div id="adminInfoModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Информация об автомобиле</h2>
+        <button id="closeAdminInfoModalBtn" class="modal-close-btn" type="button">&times;</button>
+      </div>
+      <div id="adminInfoModalBody">
+        <!-- Заполняется динамически -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ -->
+  <div id="toastBox" class="toast-box"></div>
+
+  <!-- Модули JS (import/export) -->
+  <script src="./adminMain.js" type="module"></script>
+</body>
+</html>

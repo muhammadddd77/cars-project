@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Каталог автомобилей — AutoDealer</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Axios CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Styles -->
+  <link rel="stylesheet" href="./client.css">
+</head>
+<body>
+
+  <!-- ВЕРХНЯЯ ШАПКА -->
+  <header class="header">
+    <div class="header-container">
+      <a href="./client.html" class="brand-section">
+        <div class="brand-badge">🚗</div>
+        <div class="brand-text">
+          <h1>AutoDealer</h1>
+          <p>Официальный дилерский центр</p>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <!-- Кнопка перехода в админку для админа -->
+        <a href="../admin/admin.html" id="adminLink" class="admin-link-btn" style="display: none;">
+          ⚙️ Админ-панель
+        </a>
+
+        <!-- Избранное -->
+        <div class="favorites-pill" id="favCounterPill" title="Количество авто в избранном">
+          <span>❤️</span>
+          <span id="favCount">0</span>
+        </div>
+
+        <!-- Пользователь -->
+        <div class="user-badge" id="userBadge">
+          <span>👤</span>
+          <span id="userName">Гость</span>
+        </div>
+
+        <!-- Переключатель темы -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" title="Переключить тему">
+          <span id="themeIcon">🌙</span>
+        </button>
+
+        <!-- Выход -->
+        <button id="logoutBtn" class="btn-logout" type="button">
+          🚪 Выйти
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ОСНОВНОЙ КОНТЕНТ -->
+  <main class="main-wrapper">
+
+    <!-- БЛОК ПОИСКА И ФИЛЬТРАЦИИ -->
+    <section class="filter-card">
+      <div class="filter-row-top">
+        <!-- Текстовый поиск (Search) -->
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="Поиск по марке, модели (например, Skoda Octavia)..." 
+            autocomplete="off"
+          >
+        </div>
+
+        <!-- Select Search: Фильтр по марке -->
+        <div>
+          <select id="brandSelect" class="select-filter" aria-label="Фильтр по марке">
+            <option value="">Все марки</option>
+            <option value="Skoda">Skoda</option>
+            <option value="Volkswagen">Volkswagen</option>
+            <option value="Toyota">Toyota</option>
+            <option value="Kia">Kia</option>
+            <option value="Hyundai">Hyundai</option>
+          </select>
+        </div>
+
+        <!-- Select Search: Сортировка -->
+        <div>
+          <select id="sortSelect" class="select-filter" aria-label="Сортировка">
+            <option value="default">Сортировка: По умолчанию</option>
+            <option value="price-asc">Цена: по возрастанию</option>
+            <option value="price-desc">Цена: по убыванию</option>
+            <option value="power-desc">Мощность: по убыванию</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Чекбоксы (Checkbox) и счетчик результатов -->
+      <div class="filter-row-bottom">
+        <div class="checkbox-group">
+          <label class="custom-checkbox-label">
+            <input type="checkbox" id="dayOfferCheckbox">
+            <span>🔥 Предложение дня</span>
+          </label>
+
+          <label class="custom-checkbox-label">
+            <input type="checkbox" id="inStockCheckbox">
+            <span>✅ В наличии</span>
+          </label>
+
+          <label class="custom-checkbox-label">
+            <input type="checkbox" id="kaskoCheckbox">
+            <span>🛡️ КАСКО в подарок</span>
+          </label>
+        </div>
+
+        <div class="filter-actions">
+          <span id="resultsCount" class="results-count">Найдено: 0 авто</span>
+          <button id="resetFiltersBtn" class="btn-reset" type="button">Сбросить</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- СЕТКА КАРТОЧЕК АВТОМОБИЛЕЙ -->
+    <section id="carsGrid" class="cars-grid">
+      <!-- Карточки рендерятся через clientDom.js -->
+    </section>
+
+  </main>
+
+  <!-- МОДАЛЬНОЕ ОКНО "ПОДРОБНЕЕ" (INFO) -->
+  <div id="detailsModal" class="modal-overlay">
+    <div class="modal-content">
+      <button id="closeModalBtn" class="modal-close-btn" type="button">&times;</button>
+      <div id="modalBody">
+        <!-- Контент инфо-окна рендерится динамически -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ (TOAST) -->
+  <div id="toastBox" class="toast-box"></div>
+
+  <!-- Модули JS (import/export) -->
+  <script src="./clientMain.js" type="module"></script>
+</body>
+</html>

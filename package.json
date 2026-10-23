@@ -1,0 +1,19 @@
+{
+  "name": "lesson-18",
+  "version": "1.0.0",
+  "description": "AutoDealer Catalog and Admin CRM with axios, json-server, localStorage and CRUD",
+  "main": "login.js",
+  "type": "module",
+  "scripts": {
+    "server": "npx json-server db.json -p 3000",
+    "start": "npx json-server db.json -p 3000"
+  },
+  "keywords": [
+    "axios",
+    "json-server",
+    "crud",
+    "localStorage"
+  ],
+  "author": "",
+  "license": "ISC"
+}
