@@ -1,42 +1,56 @@
 // clientMain.js - Главный контроллер клиентской страницы (ES Module)
 
-import { getCars, getCarById, updateCarLikes } from './clientApi.js';
+import { getCars, getCarById, updateCarLikes, getDealerProfile, createOrder } from './clientApi.js';
 import { 
   renderCarCards, 
   openInfoModal, 
   closeInfoModal, 
+  openOrderModal,
+  closeOrderModal,
+  renderDealerStrip,
   showToast, 
   updateResultsCount, 
   updateFavoritesCount 
 } from './clientDom.js';
 
+// Определение относительных путей в зависимости от места загрузки (в корне index.html или в папке /client/client.html)
+const isSubfolder = window.location.pathname.replace(/\\/g, '/').includes('/client/');
+const LOGIN_PAGE_URL = isSubfolder ? '../login.html' : './login.html';
+const ADMIN_PAGE_URL = isSubfolder ? '../admin/admin.html' : './admin/admin.html';
+
 // Состояние приложения
 let allCars = [];
 let favorites = [];
+let currentUser = null;
 
 // Проверка авторизации
 function checkAuth() {
   const userJson = localStorage.getItem('currentUser');
   if (!userJson) {
-    window.location.href = '../login.html';
+    window.location.href = LOGIN_PAGE_URL;
     return null;
   }
 
   try {
     const user = JSON.parse(userJson);
+    currentUser = user;
+
     const userNameEl = document.getElementById('userName');
     if (userNameEl) userNameEl.textContent = user.name || user.username;
 
-    // Если вошел админ, показываем кнопку перехода в админку
+    // Если вошел админ / бизнес-аккаунт, показываем кнопку перехода в админку
     if (user.role === 'admin') {
       const adminLink = document.getElementById('adminLink');
-      if (adminLink) adminLink.style.display = 'inline-flex';
+      if (adminLink) {
+        adminLink.href = ADMIN_PAGE_URL;
+        adminLink.style.display = 'inline-flex';
+      }
     }
 
     return user;
   } catch (e) {
     localStorage.removeItem('currentUser');
-    window.location.href = '../login.html';
+    window.location.href = LOGIN_PAGE_URL;
     return null;
   }
 }
@@ -85,7 +99,7 @@ async function handleToggleFavorite(carId) {
   if (!targetCar) return;
 
   const index = favorites.indexOf(idStr);
-  let newLikes = targetCar.likes || 0;
+  let newLikes = Number(targetCar.likes) || 0;
 
   if (index > -1) {
     favorites.splice(index, 1);
@@ -108,6 +122,24 @@ async function handleToggleFavorite(carId) {
   applyFilters();
 }
 
+// Открытие модалки оформления заявки
+function handleStartOrder(carId, defaultType = 'Резерв онлайн') {
+  const car = allCars.find(c => String(c.id) === String(carId));
+  if (!car) return;
+
+  openOrderModal(car, currentUser || {}, async (orderData) => {
+    try {
+      await createOrder({
+        ...orderData,
+        type: orderData.type || defaultType
+      });
+      showToast(`Заявка на ${car.brand} ${car.model} успешно отправлена в салон!`);
+    } catch (e) {
+      showToast('Ошибка отправки заявки', 'error');
+    }
+  });
+}
+
 // Фильтрация и поиск (Search, Select Search, Checkbox)
 function applyFilters() {
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -120,12 +152,12 @@ function applyFilters() {
   let filtered = allCars.filter(car => {
     // 1. Поиск по тексту (Search)
     if (query) {
-      const fullSearchText = `${car.brand} ${car.model} ${car.trim} ${car.description || ''}`.toLowerCase();
+      const fullSearchText = `${car.brand || ''} ${car.model || ''} ${car.trim || ''} ${car.description || ''}`.toLowerCase();
       if (!fullSearchText.includes(query)) return false;
     }
 
     // 2. Фильтр по марке (Select Search)
-    if (selectedBrand && car.brand.toLowerCase() !== selectedBrand.toLowerCase()) {
+    if (selectedBrand && car.brand && car.brand.toLowerCase() !== selectedBrand.toLowerCase()) {
       return false;
     }
 
@@ -149,9 +181,9 @@ function applyFilters() {
 
   // 6. Сортировка (Select Search)
   if (sortType === 'price-asc') {
-    filtered.sort((a, b) => a.price - b.price);
+    filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
   } else if (sortType === 'price-desc') {
-    filtered.sort((a, b) => b.price - a.price);
+    filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
   } else if (sortType === 'power-desc') {
     filtered.sort((a, b) => (b.horsepower || 0) - (a.horsepower || 0));
   }
@@ -160,22 +192,13 @@ function applyFilters() {
 
   renderCarCards(filtered, favorites, {
     onToggleFavorite: handleToggleFavorite,
-    onReserve: (id) => {
-      const car = allCars.find(c => String(c.id) === String(id));
-      showToast(`Заявка на бронь принята: ${car ? car.brand + ' ' + car.model : 'Автомобиль'}!`);
-    },
-    onBuy: (id) => {
-      const car = allCars.find(c => String(c.id) === String(id));
-      showToast(`Оформление покупки: ${car ? car.brand + ' ' + car.model : 'Автомобиль'}. Менеджер свяжется с вами!`);
-    },
+    onReserve: (id) => handleStartOrder(id, 'Резерв онлайн'),
+    onBuy: (id) => handleStartOrder(id, 'Покупка автомобиля'),
     onDetails: async (id) => {
       const car = await getCarById(id);
       if (car) {
         openInfoModal(car, {
-          onReserve: (resId) => {
-            const c = allCars.find(item => String(item.id) === String(resId));
-            showToast(`Заявка на бронь принята: ${c ? c.brand + ' ' + c.model : 'Автомобиль'}!`);
-          }
+          onReserve: (resId) => handleStartOrder(resId, 'Резерв онлайн')
         });
       }
     }
@@ -201,12 +224,18 @@ async function init() {
   setupTheme();
   loadFavorites();
 
+  // Загрузка плашки дилера (Ganiev Muhammad)
+  try {
+    const profile = await getDealerProfile();
+    renderDealerStrip(profile);
+  } catch (e) {}
+
   // Выход из системы
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('currentUser');
-      window.location.href = '../login.html';
+      window.location.href = LOGIN_PAGE_URL;
     });
   }
 
@@ -219,13 +248,14 @@ async function init() {
   document.getElementById('kaskoCheckbox').addEventListener('change', applyFilters);
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
-  // Закрытие модального окна
+  // Закрытие модалок
   const closeModalBtn = document.getElementById('closeModalBtn');
   const detailsModal = document.getElementById('detailsModal');
+  const closeOrderModalBtn = document.getElementById('closeOrderModalBtn');
+  const orderModal = document.getElementById('orderModal');
 
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', closeInfoModal);
-  }
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeInfoModal);
+  if (closeOrderModalBtn) closeOrderModalBtn.addEventListener('click', closeOrderModal);
 
   if (detailsModal) {
     detailsModal.addEventListener('click', (e) => {
@@ -233,8 +263,17 @@ async function init() {
     });
   }
 
+  if (orderModal) {
+    orderModal.addEventListener('click', (e) => {
+      if (e.target === orderModal) closeOrderModal();
+    });
+  }
+
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeInfoModal();
+    if (e.key === 'Escape') {
+      closeInfoModal();
+      closeOrderModal();
+    }
   });
 
   // Загрузка автомобилей через axios GET

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Админ-панель — AutoDealer CRM</title>
+  <title>Бизнес-кабинет — AutoDealer CRM</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,27 +15,32 @@
 </head>
 <body>
 
-  <!-- ВЕРХНЯЯ ШАПКА АДМИНИСТРАТОРА -->
+  <!-- ВЕРХНЯЯ ШАПКА БИЗНЕС-АККАУНТА -->
   <header class="admin-header">
     <div class="admin-header-content">
       <div class="admin-logo-area">
         <div class="logo-badge">🚗</div>
         <div>
           <span class="logo-title">AutoDealer</span>
-          <span class="admin-tag">ADMIN CRM</span>
+          <span class="admin-tag-business">🏢 БИЗНЕС-АККАУНТ</span>
         </div>
       </div>
 
       <div class="admin-nav-actions">
         <!-- Кнопка перехода на витрину клиента -->
-        <a href="../client/client.html" class="btn-nav btn-client-view" title="Перейти на витрину клиента">
+        <a href="../index.html" class="btn-nav btn-client-view" title="Перейти на клиентскую витрину">
           👁️ Открыть витрину
         </a>
 
-        <!-- Имя администратора -->
-        <div class="btn-nav" id="adminUserBadge">
+        <!-- Кнопка управления бизнес-профилем -->
+        <button id="btnOpenProfileModal" class="btn-nav" type="button" title="Управление профилем компании">
+          🏢 Мой профиль
+        </button>
+
+        <!-- Имя администратора / владельца -->
+        <div class="btn-nav" id="adminUserBadge" title="Владелец бизнес-аккаунта">
           <span>🛡️</span>
-          <span id="adminName">Администратор</span>
+          <span id="adminName">Ganiev Muhammad</span>
         </div>
 
         <!-- Переключатель темы -->
@@ -51,10 +56,32 @@
     </div>
   </header>
 
-  <!-- ОСНОВНОЙ КОНТЕНТ -->
+  <!-- ОСНОВНОЙ КОНТЕНТ БИЗНЕС-КАБИНЕТА -->
   <main class="dashboard-container">
 
-    <!-- КАРТОЧКИ СТАТИСТИКИ -->
+    <!-- БАННЕР БИЗНЕС-АККАУНТА И КОНТАКТОВ -->
+    <section class="business-banner">
+      <div class="business-banner-left">
+        <div class="business-avatar" id="businessAvatar">GM</div>
+        <div>
+          <div class="business-info-title">
+            <span id="bannerCompanyName">AutoDealer Motors</span>
+            <span class="badge-verified">✓ Верифицирован</span>
+          </div>
+          <div class="business-info-sub">
+            <span>👤 Руководитель: <strong id="bannerOwnerName">Ganiev Muhammad</strong></span>
+            <span>📞 <span id="bannerPhone">+998 90 123 45 67</span></span>
+            <span>📍 <span id="bannerCity">г. Ташкент</span></span>
+            <span>🕒 <span id="bannerHours">09:00 - 20:00</span></span>
+          </div>
+        </div>
+      </div>
+      <button id="btnEditProfileBanner" class="btn-edit-business" type="button">
+        ✏️ Редактировать инфо
+      </button>
+    </section>
+
+    <!-- КАРТОЧКИ БИЗНЕС-СТАТИСТИКИ -->
     <section class="stats-grid">
       <div class="stat-card">
         <div class="stat-info">
@@ -66,10 +93,10 @@
 
       <div class="stat-card">
         <div class="stat-info">
-          <h3>Предложения дня</h3>
-          <div id="statDayOffers" class="stat-number">0</div>
+          <h3>Капитализация автопарка</h3>
+          <div id="statTotalValue" class="stat-number">0 ₽</div>
         </div>
-        <div class="stat-icon">🔥</div>
+        <div class="stat-icon">💼</div>
       </div>
 
       <div class="stat-card">
@@ -82,77 +109,133 @@
 
       <div class="stat-card">
         <div class="stat-info">
-          <h3>Средняя стоимость</h3>
-          <div id="statAvgPrice" class="stat-number">0 ₽</div>
+          <h3>Предложения дня</h3>
+          <div id="statDayOffers" class="stat-number">0</div>
         </div>
-        <div class="stat-icon">💰</div>
+        <div class="stat-icon">🔥</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>Заявки клиентов</h3>
+          <div id="statTotalOrders" class="stat-number">0</div>
+        </div>
+        <div class="stat-icon">📋</div>
       </div>
     </section>
 
-    <!-- ПАНЕЛЬ ПОИСКА, ФИЛЬТРОВ И ДОБАВЛЕНИЯ -->
-    <section class="toolbar-card">
-      <div class="toolbar-filters">
-        <!-- Текстовый поиск (Search) -->
-        <div class="search-field">
-          <span class="search-icon">🔍</span>
-          <input 
-            type="text" 
-            id="adminSearchInput" 
-            placeholder="Поиск по марке, модели, комплектации..."
-            autocomplete="off"
-          >
-        </div>
-
-        <!-- Фильтр по марке (Select Search) -->
-        <select id="adminBrandSelect" class="select-filter" aria-label="Фильтр по марке">
-          <option value="">Все марки</option>
-          <option value="Skoda">Skoda</option>
-          <option value="Volkswagen">Volkswagen</option>
-          <option value="Toyota">Toyota</option>
-          <option value="Kia">Kia</option>
-          <option value="Hyundai">Hyundai</option>
-        </select>
-
-        <!-- Чекбоксы (Checkbox) -->
-        <label class="checkbox-label">
-          <input type="checkbox" id="adminDayOfferOnly">
-          <span>Предложение дня</span>
-        </label>
-
-        <label class="checkbox-label">
-          <input type="checkbox" id="adminInStockOnly">
-          <span>В наличии</span>
-        </label>
-      </div>
-
-      <!-- Кнопка вызова модального окна добавления (POST) -->
-      <button id="openAddModalBtn" class="btn-add-car" type="button">
-        <span>+</span> Добавить авто
+    <!-- ВКЛАДКИ CRM (АВТОПАРК / ЗАЯВКИ КЛИЕНТОВ) -->
+    <div class="crm-tabs">
+      <button type="button" id="tabCarsBtn" class="crm-tab-btn active">
+        🚘 Автопарк и каталог <span id="tabCarsBadge" class="crm-tab-badge">0</span>
       </button>
-    </section>
+      <button type="button" id="tabOrdersBtn" class="crm-tab-btn">
+        📋 Входящие заявки (CRM) <span id="tabOrdersBadge" class="crm-tab-badge">0</span>
+      </button>
+    </div>
 
-    <!-- ТАБЛИЦА ВСЕХ АВТОМОБИЛЕЙ (GET, PUT, DELETE) -->
-    <section class="table-card">
-      <div class="table-responsive">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width: 80px;">Фото</th>
-              <th>Марка и Модель</th>
-              <th>Комплектация</th>
-              <th>Стоимость</th>
-              <th>Кредит/мес</th>
-              <th>Статус</th>
-              <th>Акции</th>
-              <th style="width: 230px;">Действия</th>
-            </tr>
-          </thead>
-          <tbody id="carsTableBody">
-            <!-- Строки таблицы генерируются через adminDom.js -->
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <!-- РАЗДЕЛ 1: УПРАВЛЕНИЕ АВТОПАРКОМ -->
+    <div id="carsTabSection">
+      <!-- ПАНЕЛЬ ПОИСКА, ФИЛЬТРОВ И ДОБАВЛЕНИЯ -->
+      <section class="toolbar-card">
+        <div class="toolbar-filters">
+          <!-- Текстовый поиск (Search) -->
+          <div class="search-field">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="adminSearchInput" 
+              placeholder="Поиск по марке, модели, комплектации..."
+              autocomplete="off"
+            >
+          </div>
+
+          <!-- Фильтр по марке (Select Search) -->
+          <select id="adminBrandSelect" class="select-filter" aria-label="Фильтр по марке">
+            <option value="">Все марки</option>
+            <option value="Skoda">Skoda</option>
+            <option value="Volkswagen">Volkswagen</option>
+            <option value="Toyota">Toyota</option>
+            <option value="Kia">Kia</option>
+            <option value="Hyundai">Hyundai</option>
+          </select>
+
+          <!-- Чекбоксы (Checkbox) -->
+          <label class="checkbox-label">
+            <input type="checkbox" id="adminDayOfferOnly">
+            <span>Предложение дня</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" id="adminInStockOnly">
+            <span>В наличии</span>
+          </label>
+        </div>
+
+        <!-- Кнопка вызова модального окна добавления (POST) -->
+        <button id="openAddModalBtn" class="btn-add-car" type="button">
+          <span>+</span> Добавить авто
+        </button>
+      </section>
+
+      <!-- ТАБЛИЦА ВСЕХ АВТОМОБИЛЕЙ (GET, PUT, DELETE) -->
+      <section class="table-card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Фото</th>
+                <th>Марка и Модель</th>
+                <th>Комплектация</th>
+                <th>Стоимость</th>
+                <th>Кредит/мес</th>
+                <th>Статус</th>
+                <th>Акции</th>
+                <th style="width: 230px;">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="carsTableBody">
+              <!-- Строки таблицы генерируются через adminDom.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- РАЗДЕЛ 2: ВХОДЯЩИЕ ЗАЯВКИ КЛИЕНТОВ (CRM) -->
+    <div id="ordersTabSection" style="display: none;">
+      <section class="table-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800;">Входящие заявки от покупателей</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">Заявки на бронь и покупку автомобилей из каталога</p>
+          </div>
+          <button id="btnClearOrdersBtn" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" type="button">
+            Очистить завершенные
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Телефон</th>
+                <th>Автомобиль</th>
+                <th>Тип сделки</th>
+                <th>Комментарий</th>
+                <th>Статус заявки</th>
+                <th style="width: 140px;">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <!-- Заполняется динамически -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
   </main>
 
@@ -229,6 +312,7 @@
             <select id="transmissionSelect">
               <option value="Механика">Механика</option>
               <option value="Автомат">Автомат</option>
+              <option value="Автомат (8 ст.)">Автомат (8 ст.)</option>
               <option value="Робот (DSG)">Робот (DSG)</option>
               <option value="Вариатор">Вариатор</option>
             </select>
@@ -301,6 +385,76 @@
       <div id="adminInfoModalBody">
         <!-- Заполняется динамически -->
       </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО БИЗНЕС-ПРОФИЛЯ (GANIEV MUHAMMAD) -->
+  <div id="businessProfileModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 24px;">🏢</div>
+          <div>
+            <h2 class="modal-title" style="font-size: 18px;">Бизнес-профиль дилера</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">Настройка реквизитов и контактов компании</p>
+          </div>
+        </div>
+        <button id="closeProfileModalBtn" class="modal-close-btn" type="button">&times;</button>
+      </div>
+
+      <form id="profileForm">
+        <div class="form-grid">
+          <div class="form-field form-full">
+            <label for="profileOwnerInput">ФИО руководителя / владельца *</label>
+            <input type="text" id="profileOwnerInput" value="Ganiev Muhammad" required placeholder="Ganiev Muhammad">
+          </div>
+
+          <div class="form-field form-full">
+            <label for="profileCompanyInput">Название автосалона / организации *</label>
+            <input type="text" id="profileCompanyInput" value="AutoDealer Motors" required placeholder="Например: AutoDealer Motors">
+          </div>
+
+          <div class="form-field">
+            <label for="profilePhoneInput">Контактный телефон *</label>
+            <input type="text" id="profilePhoneInput" value="+998 90 123 45 67" placeholder="+998 90 123 45 67" required>
+          </div>
+
+          <div class="form-field">
+            <label for="profileEmailInput">Рабочий Email</label>
+            <input type="email" id="profileEmailInput" value="ganiev.muhammad@autodealer.uz" placeholder="email@company.com">
+          </div>
+
+          <div class="form-field">
+            <label for="profileCityInput">Город / Регион</label>
+            <input type="text" id="profileCityInput" value="г. Ташкент" placeholder="г. Ташкент">
+          </div>
+
+          <div class="form-field">
+            <label for="profileHoursInput">Режим работы</label>
+            <input type="text" id="profileHoursInput" value="Пн-Вс: 09:00 - 20:00" placeholder="09:00 - 20:00">
+          </div>
+
+          <div class="form-field form-full">
+            <label for="profileAddressInput">Адрес автосалона</label>
+            <input type="text" id="profileAddressInput" value="ул. Сергели, 45, Автосалон AutoDealer" placeholder="Адрес автосалона">
+          </div>
+
+          <div class="form-field form-full">
+            <label for="profileDescInput">О компании / Дилерском центре</label>
+            <textarea id="profileDescInput" rows="3" placeholder="Краткое описание дилера...">Официальный дилерский центр продаж и обслуживания сертифицированных автомобилей.</textarea>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-subtle); padding: 12px; border-radius: 8px; margin-top: 14px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+          <span>🛡️</span>
+          <span>Статус: <strong>Верифицированный бизнес-партнер (Бизнес-аккаунт активирован)</strong></span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelProfileModalBtn" class="btn-secondary">Отмена</button>
+          <button type="submit" class="btn-primary">💾 Сохранить изменения</button>
+        </div>
+      </form>
     </div>
   </div>
 

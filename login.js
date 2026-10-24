@@ -4,8 +4,39 @@ const API_USERS_URL = 'http://localhost:3000/users';
 
 // Запасные пользователи на случай, если json-server еще не запущен
 const FALLBACK_USERS = [
-  { id: '1', username: 'admin', password: '123', name: 'Алексей (Администратор)', role: 'admin' },
-  { id: '2', username: 'client', password: '123', name: 'Иван Иванов', role: 'client' }
+  { 
+    id: '1', 
+    username: 'admin', 
+    password: '123', 
+    name: 'Ganiev Muhammad', 
+    role: 'admin',
+    accountType: 'business',
+    company: 'AutoDealer Motors',
+    phone: '+998 90 123 45 67',
+    email: 'ganiev.muhammad@autodealer.uz',
+    address: 'г. Ташкент, автосалон AutoDealer',
+    description: 'Официальный бизнес-аккаунт руководителя автосалона'
+  },
+  { 
+    id: '2', 
+    username: 'client', 
+    password: '123', 
+    name: 'Иван Иванов', 
+    role: 'client' 
+  },
+  { 
+    id: '3', 
+    username: 'ganiev', 
+    password: '123', 
+    name: 'Ganiev Muhammad', 
+    role: 'admin',
+    accountType: 'business',
+    company: 'AutoDealer Motors',
+    phone: '+998 90 123 45 67',
+    email: 'ganiev.muhammad@autodealer.uz',
+    address: 'г. Ташкент, автосалон AutoDealer',
+    description: 'Официальный бизнес-аккаунт руководителя автосалона'
+  }
 ];
 
 // Инициализация темы
@@ -74,7 +105,7 @@ function checkExistingSession() {
       if (user.role === 'admin') {
         window.location.href = './admin/admin.html';
       } else if (user.role === 'client') {
-        window.location.href = './client/client.html';
+        window.location.href = './index.html';
       }
     } catch (e) {
       localStorage.removeItem('currentUser');
@@ -96,19 +127,25 @@ async function handleLogin(username, password) {
     return;
   }
 
-  // Сохраняем пользователя в localStorage
+  // Сохраняем пользователя в localStorage со всеми полями бизнес-аккаунта
   localStorage.setItem('currentUser', JSON.stringify({
     id: user.id,
     username: user.username,
     name: user.name,
-    role: user.role
+    role: user.role,
+    accountType: user.accountType || (user.role === 'admin' ? 'business' : 'personal'),
+    company: user.company || 'AutoDealer Motors',
+    phone: user.phone || '+998 90 123 45 67',
+    email: user.email || 'ganiev.muhammad@autodealer.uz',
+    address: user.address || 'г. Ташкент, автосалон AutoDealer',
+    description: user.description || 'Официальный бизнес-аккаунт автодилера'
   }));
 
   // Перенаправление по роли
   if (user.role === 'admin') {
     window.location.href = './admin/admin.html';
   } else {
-    window.location.href = './client/client.html';
+    window.location.href = './index.html';
   }
 }
 
@@ -126,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     handleLogin(usernameInput.value, passwordInput.value);
   });
 
-  // Быстрые кнопки для удобства проверки преподавателем
+  // Быстрые кнопки для удобства проверки
   document.getElementById('btnAdminQuick').addEventListener('click', () => {
     usernameInput.value = 'admin';
     passwordInput.value = '123';

@@ -1,7 +1,12 @@
 // adminApi.js - Модуль API запросов для администратора через axios (GET, POST, PUT, DELETE)
 
 const API_CARS_URL = 'http://localhost:3000/cars';
+const API_ORDERS_URL = 'http://localhost:3000/orders';
+const API_PROFILE_URL = 'http://localhost:3000/profile';
+
 const LOCAL_STORAGE_CARS_KEY = 'autodealer_cars_cache';
+const LOCAL_STORAGE_ORDERS_KEY = 'autodealer_orders';
+const LOCAL_STORAGE_PROFILE_KEY = 'autodealer_business_profile';
 
 // Резервный список авто для автономного режима
 const DEFAULT_CARS = [
@@ -17,13 +22,13 @@ const DEFAULT_CARS = [
     equipmentGift: true,
     kaskoGift: true,
     tiresGift: true,
-    horsepower: 115,
+    horsepower: 132,
     consumption: "5.3 л/100км",
     maxSpeed: 189,
     acceleration: "10.3 с.",
     image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=700&q=80",
     inStock: true,
-    likes: 0,
+    likes: 3,
     year: 2023,
     transmission: "Механика",
     fuel: "Бензин",
@@ -48,7 +53,7 @@ const DEFAULT_CARS = [
     acceleration: "7.4 с.",
     image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=700&q=80",
     inStock: true,
-    likes: 2,
+    likes: 5,
     year: 2024,
     transmission: "Робот (DSG)",
     fuel: "Бензин",
@@ -98,9 +103,9 @@ const DEFAULT_CARS = [
     acceleration: "8.7 с.",
     image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=700&q=80",
     inStock: true,
-    likes: 5,
+    likes: 8,
     year: 2024,
-    transmission: "Автомат",
+    transmission: "Автомат (8 ст.)",
     fuel: "Бензин",
     color: "Черный",
     description: "Бизнес-класс с бескомпромиссным уровнем комфорта."
@@ -152,19 +157,60 @@ const DEFAULT_CARS = [
     year: 2024,
     transmission: "Автомат",
     fuel: "Бензин",
-    color: "Серебристый",
+    color: "Серебристый металлик",
     description: "Практичный семейный кроссовер с полным приводом."
   }
 ];
 
-// Вспомогательные функции для работы с локальным кэшем
+// Дефолтный профиль Ganiev Muhammad
+const DEFAULT_BUSINESS_PROFILE = {
+  owner: "Ganiev Muhammad",
+  company: "AutoDealer Motors",
+  phone: "+998 90 123 45 67",
+  email: "ganiev.muhammad@autodealer.uz",
+  city: "г. Ташкент",
+  address: "ул. Сергели, 45, Автосалон AutoDealer",
+  workingHours: "Пн-Вс: 09:00 - 20:00",
+  description: "Официальный дилерский центр продаж и обслуживания сертифицированных автомобилей.",
+  verified: true
+};
+
+// Дефолтные заявки
+const DEFAULT_ORDERS = [
+  {
+    id: "ord-1",
+    carId: "1",
+    carName: "Skoda Octavia 1.6 MPI",
+    carPrice: 1615000,
+    clientName: "Иван Иванов",
+    clientPhone: "+998 91 555-44-33",
+    type: "Резерв онлайн",
+    status: "Новая",
+    date: "23.10.2026, 19:40",
+    comment: "Интересует покупка в кредит на 3 года"
+  },
+  {
+    id: "ord-2",
+    carId: "4",
+    carName: "Toyota Camry 2.5 AT",
+    carPrice: 3100000,
+    clientName: "Рустам Каримов",
+    clientPhone: "+998 93 777-88-99",
+    type: "Покупка",
+    status: "В работе",
+    date: "23.10.2026, 20:15",
+    comment: "Готов приехать на тест-драйв завтра в 11:00"
+  }
+];
+
+// Вспомогательные функции для кэша авто
 function getLocalCache() {
   const cached = localStorage.getItem(LOCAL_STORAGE_CARS_KEY);
   if (cached) {
     try {
       return JSON.parse(cached);
     } catch (e) {
-      // ошибка парсинга
+      // ignore
     }
   }
   localStorage.setItem(LOCAL_STORAGE_CARS_KEY, JSON.stringify(DEFAULT_CARS));
@@ -200,9 +246,13 @@ export async function getCarById(id) {
 
 // 3. POST - Создание нового авто
 export async function createCar(carData) {
+  const carWithDefaults = {
+    ...carData,
+    likes: 0
+  };
+
   try {
-    const response = await axios.post(API_CARS_URL, carData, { timeout: 2500 });
-    // обновляем кэш
+    const response = await axios.post(API_CARS_URL, carWithDefaults, { timeout: 2500 });
     const cache = getLocalCache();
     cache.push(response.data);
     setLocalCache(cache);
@@ -211,9 +261,8 @@ export async function createCar(carData) {
     console.warn('Сервер недоступен, сохранено в localStorage');
     const cache = getLocalCache();
     const newCar = {
-      ...carData,
-      id: String(Date.now()),
-      likes: 0
+      ...carWithDefaults,
+      id: String(Date.now())
     };
     cache.push(newCar);
     setLocalCache(cache);
@@ -223,9 +272,18 @@ export async function createCar(carData) {
 
 // 4. PUT - Полное обновление существующего авто
 export async function updateCar(id, carData) {
+  const cache = getLocalCache();
+  const existing = cache.find(c => String(c.id) === String(id)) || {};
+  
+  const payload = {
+    ...existing,
+    ...carData,
+    id: String(id),
+    likes: existing.likes || 0
+  };
+
   try {
-    const response = await axios.put(`${API_CARS_URL}/${id}`, carData, { timeout: 2500 });
-    const cache = getLocalCache();
+    const response = await axios.put(`${API_CARS_URL}/${id}`, payload, { timeout: 2500 });
     const index = cache.findIndex(c => String(c.id) === String(id));
     if (index !== -1) {
       cache[index] = response.data;
@@ -234,16 +292,14 @@ export async function updateCar(id, carData) {
     return response.data;
   } catch (error) {
     console.warn('Сервер недоступен, обновлено в localStorage');
-    const cache = getLocalCache();
     const index = cache.findIndex(c => String(c.id) === String(id));
-    const updated = { ...carData, id: String(id) };
     if (index !== -1) {
-      cache[index] = updated;
+      cache[index] = payload;
     } else {
-      cache.push(updated);
+      cache.push(payload);
     }
     setLocalCache(cache);
-    return updated;
+    return payload;
   }
 }
 
@@ -262,4 +318,129 @@ export async function deleteCar(id) {
     setLocalCache(filtered);
     return true;
   }
+}
+
+// ============================================================================
+// УПРАВЛЕНИЕ ЗАЯВКАМИ КЛИЕНТОВ (ORDERS / LEADS)
+// ============================================================================
+
+export async function getOrders() {
+  try {
+    const response = await axios.get(API_ORDERS_URL, { timeout: 2000 });
+    localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(response.data));
+    return response.data;
+  } catch (e) {
+    const stored = localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (err) {}
+    }
+    localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(DEFAULT_ORDERS));
+    return DEFAULT_ORDERS;
+  }
+}
+
+export async function updateOrderStatus(orderId, newStatus) {
+  const orders = await getOrders();
+  const order = orders.find(o => String(o.id) === String(orderId));
+  if (order) {
+    order.status = newStatus;
+  }
+  localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(orders));
+
+  try {
+    await axios.patch(`${API_ORDERS_URL}/${orderId}`, { status: newStatus }, { timeout: 2000 });
+  } catch (e) {
+    // offline fallback handled via localStorage
+  }
+  return orders;
+}
+
+export async function deleteOrder(orderId) {
+  let orders = await getOrders();
+  orders = orders.filter(o => String(o.id) !== String(orderId));
+  localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(orders));
+
+  try {
+    await axios.delete(`${API_ORDERS_URL}/${orderId}`, { timeout: 2000 });
+  } catch (e) {}
+  return orders;
+}
+
+export async function clearDoneOrders() {
+  let orders = await getOrders();
+  orders = orders.filter(o => o.status !== 'Завершена');
+  localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(orders));
+  return orders;
+}
+
+// ============================================================================
+// УПРАВЛЕНИЕ БИЗНЕС-ПРОФИЛЕМ (BUSINESS PROFILE GANIEV MUHAMMAD)
+// ============================================================================
+
+export async function getBusinessProfile() {
+  try {
+    const response = await axios.get(API_PROFILE_URL, { timeout: 2000 });
+    localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(response.data));
+    return response.data;
+  } catch (e) {
+    const stored = localStorage.getItem(LOCAL_STORAGE_PROFILE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (err) {}
+    }
+    // Также проверим currentUser
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u.name) {
+          const profile = {
+            ...DEFAULT_BUSINESS_PROFILE,
+            owner: u.name,
+            company: u.company || DEFAULT_BUSINESS_PROFILE.company,
+            phone: u.phone || DEFAULT_BUSINESS_PROFILE.phone,
+            email: u.email || DEFAULT_BUSINESS_PROFILE.email,
+            address: u.address || DEFAULT_BUSINESS_PROFILE.address
+          };
+          localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(profile));
+          return profile;
+        }
+      } catch (err) {}
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(DEFAULT_BUSINESS_PROFILE));
+    return DEFAULT_BUSINESS_PROFILE;
+  }
+}
+
+export async function saveBusinessProfile(profileData) {
+  const profile = {
+    ...DEFAULT_BUSINESS_PROFILE,
+    ...profileData,
+    verified: true
+  };
+  localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(profile));
+
+  // Синхронизируем с currentUser
+  const userStr = localStorage.getItem('currentUser');
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      u.name = profile.owner;
+      u.company = profile.company;
+      u.phone = profile.phone;
+      u.email = profile.email;
+      u.address = profile.address;
+      localStorage.setItem('currentUser', JSON.stringify(u));
+    } catch (e) {}
+  }
+
+  try {
+    await axios.put(API_PROFILE_URL, profile, { timeout: 2000 });
+  } catch (e) {}
+
+  return profile;
 }

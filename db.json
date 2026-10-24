@@ -4,8 +4,14 @@
       "id": "1",
       "username": "admin",
       "password": "123",
-      "name": "Алексей Смирнов",
-      "role": "admin"
+      "name": "Ganiev Muhammad",
+      "role": "admin",
+      "accountType": "business",
+      "company": "AutoDealer Motors",
+      "phone": "+998 90 123 45 67",
+      "email": "ganiev.muhammad@autodealer.uz",
+      "address": "г. Ташкент, автосалон AutoDealer",
+      "description": "Официальный бизнес-аккаунт руководителя автосалона"
     },
     {
       "id": "2",
@@ -13,10 +19,62 @@
       "password": "123",
       "name": "Иван Иванов",
       "role": "client"
+    },
+    {
+      "id": "3",
+      "username": "ganiev",
+      "password": "123",
+      "name": "Ganiev Muhammad",
+      "role": "admin",
+      "accountType": "business",
+      "company": "AutoDealer Motors",
+      "phone": "+998 90 123 45 67",
+      "email": "ganiev.muhammad@autodealer.uz",
+      "address": "г. Ташкент, автосалон AutoDealer",
+      "description": "Официальный бизнес-аккаунт руководителя автосалона"
+    }
+  ],
+  "profile": {
+    "owner": "Ganiev Muhammad",
+    "company": "AutoDealer Motors",
+    "phone": "+998 90 123 45 67",
+    "email": "ganiev.muhammad@autodealer.uz",
+    "city": "г. Ташкент",
+    "address": "ул. Сергели, 45, Автосалон AutoDealer",
+    "workingHours": "Пн-Вс: 09:00 - 20:00",
+    "description": "Официальный дилерский центр продаж и обслуживания сертифицированных автомобилей.",
+    "verified": true,
+    "license": "UZ-AUTODEALER-BUSINESS-2024"
+  },
+  "orders": [
+    {
+      "id": "ord-1",
+      "carId": "1",
+      "carName": "Skoda Octavia 1.6 MPI",
+      "carPrice": 1615000,
+      "clientName": "Иван Иванов",
+      "clientPhone": "+998 91 555-44-33",
+      "type": "Резерв онлайн",
+      "status": "Новая",
+      "date": "23.10.2026, 19:40",
+      "comment": "Интересует покупка в кредит на 3 года"
+    },
+    {
+      "id": "ord-2",
+      "carId": "4",
+      "carName": "Toyota Camry 2.5 AT",
+      "carPrice": 3100000,
+      "clientName": "Рустам Каримов",
+      "clientPhone": "+998 93 777-88-99",
+      "type": "Покупка",
+      "status": "В работе",
+      "date": "23.10.2026, 20:15",
+      "comment": "Готов приехать на тест-драйв завтра в 11:00"
     }
   ],
   "cars": [
     {
+      "id": "1",
       "brand": "Skoda",
       "model": "Octavia",
       "trim": "1.6 MPI MT Active",
@@ -37,7 +95,7 @@
       "equipmentGift": true,
       "kaskoGift": true,
       "tiresGift": true,
-      "id": "1"
+      "likes": 3
     },
     {
       "id": "2",
@@ -113,6 +171,31 @@
       "fuel": "Бензин",
       "color": "Черный",
       "description": "Toyota Camry — легендарный бизнес-седан. Непревзойденный комфорт подвески, комплекс систем безопасности Toyota Safety Sense и высокая ликвидность на вторичном рынке."
+    },
+    {
+      "id": "5",
+      "brand": "Kia",
+      "model": "K5",
+      "trim": "2.0 AT Style",
+      "price": 2290000,
+      "creditPrice": 135000,
+      "discount": 200000,
+      "isDayOffer": false,
+      "equipmentGift": false,
+      "kaskoGift": true,
+      "tiresGift": true,
+      "horsepower": 150,
+      "consumption": "7.2 л/100км",
+      "maxSpeed": 210,
+      "acceleration": "10.6 с.",
+      "image": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=700&q=80",
+      "inStock": true,
+      "likes": 3,
+      "year": 2023,
+      "transmission": "Автомат",
+      "fuel": "Бензин",
+      "color": "Темно-синий",
+      "description": "Стильный спортивный седан с богатым пакетом опций, динамичным силуэтом и комфортабельным салоном."
     },
     {
       "id": "6",

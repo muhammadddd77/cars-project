@@ -1,7 +1,12 @@
 // clientApi.js - Модуль запросов к серверу для клиентской части через axios
 
 const API_CARS_URL = 'http://localhost:3000/cars';
+const API_ORDERS_URL = 'http://localhost:3000/orders';
+const API_PROFILE_URL = 'http://localhost:3000/profile';
+
 const LOCAL_STORAGE_CARS_KEY = 'autodealer_cars_cache';
+const LOCAL_STORAGE_ORDERS_KEY = 'autodealer_orders';
+const LOCAL_STORAGE_PROFILE_KEY = 'autodealer_business_profile';
 
 // Резервный список авто на случай, если json-server не запущен
 const FALLBACK_CARS = [
@@ -17,18 +22,18 @@ const FALLBACK_CARS = [
     equipmentGift: true,
     kaskoGift: true,
     tiresGift: true,
-    horsepower: 115,
+    horsepower: 132,
     consumption: "5.3 л/100км",
     maxSpeed: 189,
     acceleration: "10.3 с.",
     image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=700&q=80",
     inStock: true,
-    likes: 0,
+    likes: 3,
     year: 2023,
     transmission: "Механика",
     fuel: "Бензин",
     color: "Черный металлик",
-    description: "Skoda Octavia 1.6 MPI MT Active — практичный, безопасный и невероятно вместительный лифтбек. Проверенный надежный атмосферный двигатель 1.6 л в сочетании с надежной коробкой передач."
+    description: "Skoda Octavia 1.6 MPI MT Active — практичный, безопасный и невероятно вместительный лифтбек."
   },
   {
     id: "2",
@@ -48,12 +53,12 @@ const FALLBACK_CARS = [
     acceleration: "7.4 с.",
     image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=700&q=80",
     inStock: true,
-    likes: 2,
+    likes: 5,
     year: 2024,
     transmission: "Робот (DSG)",
     fuel: "Бензин",
     color: "Серый графит",
-    description: "Топовая комплектация Style Plus. Динамичный двигатель 2.0 TSI, матричная оптика и полный комплекс электронных ассистентов водителя."
+    description: "Топовая комплектация Style Plus. Динамичный двигатель 2.0 TSI, матричная оптика и полный комплекс электронных ассистентов."
   },
   {
     id: "3",
@@ -78,7 +83,7 @@ const FALLBACK_CARS = [
     transmission: "Робот (DSG)",
     fuel: "Бензин",
     color: "Белый перламутр",
-    description: "Элегантный и динамичный Volkswagen Polo Exclusive для ценителей немецкого комфорта и продуманной эргономики."
+    description: "Элегантный и динамичный Volkswagen Polo Exclusive для ценителей немецкого комфорта."
   },
   {
     id: "4",
@@ -98,9 +103,9 @@ const FALLBACK_CARS = [
     acceleration: "8.7 с.",
     image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=700&q=80",
     inStock: true,
-    likes: 5,
+    likes: 8,
     year: 2024,
-    transmission: "Автомат",
+    transmission: "Автомат (8 ст.)",
     fuel: "Бензин",
     color: "Черный",
     description: "Легендарный японский комфорт, плавность хода и бескомпромиссная надежность в каждой детали."
@@ -128,7 +133,7 @@ const FALLBACK_CARS = [
     transmission: "Автомат",
     fuel: "Бензин",
     color: "Темно-синий",
-    description: "Стильный спортивный седан с агрессивной светодиодной оптикой и богатым набором опций комфорта."
+    description: "Стильный спортивный седан с богатым набором опций комфорта."
   },
   {
     id: "6",
@@ -152,23 +157,33 @@ const FALLBACK_CARS = [
     year: 2024,
     transmission: "Автомат",
     fuel: "Бензин",
-    color: "Серебристый",
+    color: "Серебристый металлик",
     description: "Надежный кроссовер для всей семьи с полным приводом и просторным салоном."
   }
 ];
+
+const DEFAULT_PROFILE = {
+  owner: "Ganiev Muhammad",
+  company: "AutoDealer Motors",
+  phone: "+998 90 123 45 67",
+  city: "г. Ташкент",
+  address: "ул. Сергели, 45, Автосалон AutoDealer",
+  workingHours: "Пн-Вс: 09:00 - 20:00"
+};
 
 // Получить список всех автомобилей (GET)
 export async function getCars() {
   try {
     const response = await axios.get(API_CARS_URL, { timeout: 2500 });
-    // Кэшируем для надежности
     localStorage.setItem(LOCAL_STORAGE_CARS_KEY, JSON.stringify(response.data));
     return response.data;
   } catch (error) {
     console.warn('Сервер недоступен, загружаются данные из кэша / fallback данных');
     const cached = localStorage.getItem(LOCAL_STORAGE_CARS_KEY);
     if (cached) {
-      return JSON.parse(cached);
+      try {
+        return JSON.parse(cached);
+      } catch (e) {}
     }
     localStorage.setItem(LOCAL_STORAGE_CARS_KEY, JSON.stringify(FALLBACK_CARS));
     return FALLBACK_CARS;
@@ -191,15 +206,67 @@ export async function updateCarLikes(id, newLikes) {
   try {
     await axios.patch(`${API_CARS_URL}/${id}`, { likes: newLikes }, { timeout: 2500 });
   } catch (error) {
-    // Обновляем локальный кэш, если сервер выключен
     const cached = localStorage.getItem(LOCAL_STORAGE_CARS_KEY);
     if (cached) {
-      const list = JSON.parse(cached);
-      const target = list.find(c => String(c.id) === String(id));
-      if (target) {
-        target.likes = newLikes;
-        localStorage.setItem(LOCAL_STORAGE_CARS_KEY, JSON.stringify(list));
-      }
+      try {
+        const list = JSON.parse(cached);
+        const target = list.find(c => String(c.id) === String(id));
+        if (target) {
+          target.likes = newLikes;
+          localStorage.setItem(LOCAL_STORAGE_CARS_KEY, JSON.stringify(list));
+        }
+      } catch (e) {}
     }
+  }
+}
+
+// Получить профиль дилера (Ganiev Muhammad)
+export async function getDealerProfile() {
+  try {
+    const response = await axios.get(API_PROFILE_URL, { timeout: 2000 });
+    return response.data;
+  } catch (e) {
+    const cached = localStorage.getItem(LOCAL_STORAGE_PROFILE_KEY);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (err) {}
+    }
+    return DEFAULT_PROFILE;
+  }
+}
+
+// Создать заявку от клиента (бронь / покупка) -> отправляется в Бизнес-кабинет
+export async function createOrder(orderData) {
+  const newOrder = {
+    ...orderData,
+    id: `ord-${Date.now()}`,
+    date: new Date().toLocaleString('ru-RU', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }),
+    status: 'Новая'
+  };
+
+  // Сохраняем в localStorage
+  let orders = [];
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_ORDERS_KEY);
+    orders = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    orders = [];
+  }
+  orders.unshift(newOrder);
+  localStorage.setItem(LOCAL_STORAGE_ORDERS_KEY, JSON.stringify(orders));
+
+  // Пробуем отправить на сервер
+  try {
+    const response = await axios.post(API_ORDERS_URL, newOrder, { timeout: 2500 });
+    return response.data;
+  } catch (e) {
+    return newOrder;
   }
 }

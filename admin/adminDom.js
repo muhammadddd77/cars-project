@@ -1,11 +1,11 @@
-// adminDom.js - Модуль манипуляций с DOM в панели администратора
+// adminDom.js - Модуль манипуляций с DOM в панели администратора / бизнес-кабинете
 
 export function formatMoney(num) {
   if (!num && num !== 0) return '0';
   return Number(num).toLocaleString('ru-RU');
 }
 
-// Отрисовка таблицы автомобилей
+// 1. Отрисовка таблицы автомобилей
 export function renderCarsTable(cars, handlers = {}) {
   const tbody = document.getElementById('carsTableBody');
   if (!tbody) return;
@@ -70,7 +70,6 @@ export function renderCarsTable(cars, handlers = {}) {
     </tr>
   `).join('');
 
-  // Привязка обработчиков событий
   attachTableEvents(tbody, handlers);
 }
 
@@ -97,25 +96,162 @@ function attachTableEvents(tbody, handlers) {
   });
 }
 
-// Обновление карточек статистики
-export function updateDashboardStats(cars = []) {
+// 2. Обновление карточек бизнес-статистики и счетчиков
+export function updateDashboardStats(cars = [], orders = []) {
   const totalEl = document.getElementById('statTotalCars');
   const dayOffersEl = document.getElementById('statDayOffers');
   const inStockEl = document.getElementById('statInStock');
-  const avgPriceEl = document.getElementById('statAvgPrice');
+  const totalValueEl = document.getElementById('statTotalValue');
+  const totalOrdersEl = document.getElementById('statTotalOrders');
+
+  const tabCarsBadge = document.getElementById('tabCarsBadge');
+  const tabOrdersBadge = document.getElementById('tabOrdersBadge');
 
   const total = cars.length;
   const dayOffers = cars.filter(c => c.isDayOffer).length;
   const inStock = cars.filter(c => c.inStock).length;
-  const avgPrice = total > 0 ? Math.round(cars.reduce((acc, c) => acc + Number(c.price || 0), 0) / total) : 0;
+  const totalValue = cars.reduce((acc, c) => acc + Number(c.price || 0), 0);
+  const totalOrders = orders.length;
 
   if (totalEl) totalEl.textContent = total;
   if (dayOffersEl) dayOffersEl.textContent = dayOffers;
   if (inStockEl) inStockEl.textContent = inStock;
-  if (avgPriceEl) avgPriceEl.textContent = `${formatMoney(avgPrice)} ₽`;
+  if (totalValueEl) totalValueEl.textContent = `${formatMoney(totalValue)} ₽`;
+  if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
+
+  if (tabCarsBadge) tabCarsBadge.textContent = total;
+  if (tabOrdersBadge) tabOrdersBadge.textContent = totalOrders;
 }
 
-// Заполнение формы данными авто для редактирования (PUT)
+// 3. Отрисовка таблицы заказов и заявок (CRM)
+export function renderOrdersTable(orders = [], handlers = {}) {
+  const tbody = document.getElementById('ordersTableBody');
+  if (!tbody) return;
+
+  if (!orders || orders.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-muted);">
+          <div style="font-size: 28px; margin-bottom: 6px;">📝</div>
+          <div style="font-weight: 600;">Входящих заявок пока нет</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = orders.map(ord => {
+    let statusClass = 'badge-order-new';
+    if (ord.status === 'В работе') statusClass = 'badge-order-process';
+    if (ord.status === 'Завершена') statusClass = 'badge-order-done';
+
+    return `
+      <tr data-order-id="${ord.id}">
+        <td style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">
+          ${ord.date || 'Сегодня'}
+        </td>
+        <td style="font-weight: 700; color: var(--text-main);">
+          ${ord.clientName || 'Клиент'}
+        </td>
+        <td style="font-weight: 600; color: var(--primary);">
+          ${ord.clientPhone || '—'}
+        </td>
+        <td>
+          <div style="font-weight: 700;">${ord.carName || 'Автомобиль'}</div>
+          <div style="font-size: 12px; color: var(--text-muted);">${formatMoney(ord.carPrice || 0)} ₽</div>
+        </td>
+        <td>
+          <span style="font-size: 12px; font-weight: 700; background: var(--bg-subtle); padding: 3px 8px; border-radius: 6px;">
+            ${ord.type || 'Заявка'}
+          </span>
+        </td>
+        <td style="font-size: 12.5px; color: var(--text-muted); max-width: 220px;">
+          ${ord.comment || '—'}
+        </td>
+        <td>
+          <select class="select-filter order-status-select" data-id="${ord.id}" style="padding: 4px 8px; font-size: 12px; font-weight: 700; border-radius: 6px;">
+            <option value="Новая" ${ord.status === 'Новая' ? 'selected' : ''}>🟡 Новая</option>
+            <option value="В работе" ${ord.status === 'В работе' ? 'selected' : ''}>🔵 В работе</option>
+            <option value="Завершена" ${ord.status === 'Завершена' ? 'selected' : ''}>🟢 Завершена</option>
+          </select>
+        </td>
+        <td>
+          <button type="button" class="btn-action btn-action-delete" data-action="delete-order" data-id="${ord.id}" title="Удалить заявку">
+            🗑️ Удалить
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Обработчики статуса и удаления заказов
+  tbody.querySelectorAll('.order-status-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const id = sel.getAttribute('data-id');
+      if (handlers.onStatusChange) handlers.onStatusChange(id, sel.value);
+    });
+  });
+
+  tbody.querySelectorAll('[data-action="delete-order"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      if (handlers.onDeleteOrder) handlers.onDeleteOrder(id);
+    });
+  });
+}
+
+// 4. Отрисовка баннера бизнес-профиля (Ganiev Muhammad)
+export function renderBusinessProfileBanner(profile = {}) {
+  const compEl = document.getElementById('bannerCompanyName');
+  const ownerEl = document.getElementById('bannerOwnerName');
+  const phoneEl = document.getElementById('bannerPhone');
+  const cityEl = document.getElementById('bannerCity');
+  const hoursEl = document.getElementById('bannerHours');
+  const avatarEl = document.getElementById('businessAvatar');
+  const adminNameEl = document.getElementById('adminName');
+
+  const owner = profile.owner || 'Ganiev Muhammad';
+  const company = profile.company || 'AutoDealer Motors';
+
+  if (compEl) compEl.textContent = company;
+  if (ownerEl) ownerEl.textContent = owner;
+  if (phoneEl) phoneEl.textContent = profile.phone || '+998 90 123 45 67';
+  if (cityEl) cityEl.textContent = profile.city || 'г. Ташкент';
+  if (hoursEl) hoursEl.textContent = profile.workingHours || '09:00 - 20:00';
+  if (adminNameEl) adminNameEl.textContent = owner;
+
+  if (avatarEl) {
+    const initials = owner.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+    avatarEl.textContent = initials || 'GM';
+  }
+}
+
+// 5. Заполнение модального окна профиля компании
+export function fillProfileForm(profile = {}) {
+  document.getElementById('profileOwnerInput').value = profile.owner || 'Ganiev Muhammad';
+  document.getElementById('profileCompanyInput').value = profile.company || 'AutoDealer Motors';
+  document.getElementById('profilePhoneInput').value = profile.phone || '+998 90 123 45 67';
+  document.getElementById('profileEmailInput').value = profile.email || 'ganiev.muhammad@autodealer.uz';
+  document.getElementById('profileCityInput').value = profile.city || 'г. Ташкент';
+  document.getElementById('profileHoursInput').value = profile.workingHours || 'Пн-Вс: 09:00 - 20:00';
+  document.getElementById('profileAddressInput').value = profile.address || 'ул. Сергели, 45, Автосалон AutoDealer';
+  document.getElementById('profileDescInput').value = profile.description || 'Официальный дилерский центр продаж и обслуживания сертифицированных автомобилей.';
+}
+
+export function getProfileFormData() {
+  return {
+    owner: document.getElementById('profileOwnerInput').value.trim() || 'Ganiev Muhammad',
+    company: document.getElementById('profileCompanyInput').value.trim() || 'AutoDealer Motors',
+    phone: document.getElementById('profilePhoneInput').value.trim(),
+    email: document.getElementById('profileEmailInput').value.trim(),
+    city: document.getElementById('profileCityInput').value.trim(),
+    workingHours: document.getElementById('profileHoursInput').value.trim(),
+    address: document.getElementById('profileAddressInput').value.trim(),
+    description: document.getElementById('profileDescInput').value.trim()
+  };
+}
+
+// 6. Заполнение формы авто для редактирования (PUT)
 export function fillForm(car) {
   document.getElementById('modalFormTitle').textContent = `Редактирование: ${car.brand} ${car.model}`;
   document.getElementById('carIdInput').value = car.id || '';
@@ -130,7 +266,19 @@ export function fillForm(car) {
   document.getElementById('maxSpeedInput').value = car.maxSpeed || '';
   document.getElementById('accelerationInput').value = car.acceleration || '';
   document.getElementById('yearInput').value = car.year || 2023;
-  document.getElementById('transmissionSelect').value = car.transmission || 'Автомат';
+
+  const transSelect = document.getElementById('transmissionSelect');
+  if (car.transmission) {
+    let exists = Array.from(transSelect.options).some(o => o.value === car.transmission);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = car.transmission;
+      opt.textContent = car.transmission;
+      transSelect.appendChild(opt);
+    }
+    transSelect.value = car.transmission;
+  }
+
   document.getElementById('colorInput').value = car.color || '';
   document.getElementById('imageInput').value = car.image || '';
   document.getElementById('descriptionInput').value = car.description || '';
@@ -143,16 +291,16 @@ export function fillForm(car) {
   document.getElementById('tiresGiftCheckbox').checked = Boolean(car.tiresGift);
 }
 
-// Сброс полей формы (для добавления нового авто POST)
+// 7. Сброс полей формы (для POST)
 export function resetForm() {
-  document.getElementById('modalFormTitle').textContent = 'Добавить автомобиль';
+  document.getElementById('modalFormTitle').textContent = 'Добавить автомобиль в автопарк';
   document.getElementById('carForm').reset();
   document.getElementById('carIdInput').value = '';
   document.getElementById('yearInput').value = 2024;
   document.getElementById('inStockCheckbox').checked = true;
 }
 
-// Сбор данных из формы в JS объект
+// 8. Сбор данных из формы авто
 export function getFormData() {
   return {
     brand: document.getElementById('brandInput').value.trim(),
@@ -178,19 +326,18 @@ export function getFormData() {
   };
 }
 
-// Открытие модального окна
+// 9. Открытие / закрытие модальных окон
 export function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.add('open');
 }
 
-// Закрытие модального окна
 export function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('open');
 }
 
-// Рендер детальной информации (info)
+// 10. Рендер детальной информации (INFO)
 export function renderAdminInfo(car) {
   const body = document.getElementById('adminInfoModalBody');
   if (!body || !car) return;
@@ -227,7 +374,7 @@ export function renderAdminInfo(car) {
   openModal('adminInfoModal');
 }
 
-// Показ уведомления Toast
+// 11. Показ Toast-уведомлений
 export function showToast(message, type = 'success') {
   const toast = document.getElementById('toastBox');
   if (!toast) return;

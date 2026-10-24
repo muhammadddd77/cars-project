@@ -24,7 +24,8 @@ export function renderCarCards(cars, favoritesList = [], handlers = {}) {
 
   container.innerHTML = cars.map(car => {
     const isFav = favoritesList.includes(String(car.id));
-    const likesDisplay = (car.likes < 10 && car.likes >= 0) ? `0${car.likes}` : `${car.likes || 0}`;
+    const likesCount = Number(car.likes) || 0;
+    const likesDisplay = (likesCount < 10 && likesCount >= 0) ? `0${likesCount}` : `${likesCount}`;
 
     return `
       <article class="car-card" data-car-id="${car.id}">
@@ -50,7 +51,7 @@ export function renderCarCards(cars, favoritesList = [], handlers = {}) {
 
           <!-- Бейджи: Спецпредложение и выгода -->
           <div class="badges-row">
-            ${car.isDayOffer ? '<span class="badge-day-offer">Предложение дня</span>' : ''}
+            ${car.isDayOffer ? '<span class="badge-day-offer">🔥 Предложение дня</span>' : ''}
             ${car.discount ? `<span class="badge-benefit">Выгода до ${formatMoney(car.discount)} ₽</span>` : ''}
           </div>
 
@@ -127,13 +128,11 @@ export function renderCarCards(cars, favoritesList = [], handlers = {}) {
     `;
   }).join('');
 
-  // Навешивание обработчиков событий
   attachCardEvents(container, handlers);
 }
 
-// Вспомогательная функция привязки событий к карточкам
+// Привязка событий к карточкам
 function attachCardEvents(container, handlers) {
-  // Клик по сердечку
   container.querySelectorAll('.btn-fav').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -142,7 +141,6 @@ function attachCardEvents(container, handlers) {
     });
   });
 
-  // Клик по кнопкам "Резерв онлайн"
   container.querySelectorAll('[data-action="reserve"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const carId = btn.getAttribute('data-id');
@@ -150,7 +148,6 @@ function attachCardEvents(container, handlers) {
     });
   });
 
-  // Клик по кнопкам "Купить"
   container.querySelectorAll('[data-action="buy"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const carId = btn.getAttribute('data-id');
@@ -158,13 +155,35 @@ function attachCardEvents(container, handlers) {
     });
   });
 
-  // Клик по кнопкам "Подробнее" (info)
   container.querySelectorAll('[data-action="details"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const carId = btn.getAttribute('data-id');
       if (handlers.onDetails) handlers.onDetails(carId);
     });
   });
+}
+
+// Отображение плашки официального дилера
+export function renderDealerStrip(profile = {}) {
+  const strip = document.getElementById('dealerStrip');
+  if (!strip) return;
+
+  const owner = profile.owner || 'Ganiev Muhammad';
+  const company = profile.company || 'AutoDealer Motors';
+  const phone = profile.phone || '+998 90 123 45 67';
+  const city = profile.city || 'г. Ташкент';
+
+  strip.innerHTML = `
+    <div class="dealer-strip-info">
+      <span class="dealer-tag-business">🏢 БИЗНЕС-АККАУНТ ДИЛЕРА</span>
+      <span>Официальный дилер: <strong>${owner}</strong> (${company})</span>
+      <span>📞 ${phone}</span>
+      <span>📍 ${city}</span>
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted);">
+      ✅ Сертифицированные авто с гарантией
+    </div>
+  `;
 }
 
 // Отображение модального окна подробной информации (info)
@@ -236,7 +255,7 @@ export function openInfoModal(car, handlers = {}) {
 
       <div style="display: flex; gap: 10px;">
         <button type="button" id="modalReserveBtn" class="btn-card btn-reserve" style="padding: 10px 18px;">
-          Забронировать
+          Забронировать онлайн
         </button>
       </div>
     </div>
@@ -253,12 +272,83 @@ export function openInfoModal(car, handlers = {}) {
   modal.classList.add('open');
 }
 
-// Закрытие модального окна
 export function closeInfoModal() {
   const modal = document.getElementById('detailsModal');
-  if (modal) {
-    modal.classList.remove('open');
-  }
+  if (modal) modal.classList.remove('open');
+}
+
+// Отображение модального окна заявки (Order Modal)
+export function openOrderModal(car, user = {}, onSubmitOrder) {
+  const modal = document.getElementById('orderModal');
+  const body = document.getElementById('orderModalBody');
+  if (!modal || !body || !car) return;
+
+  body.innerHTML = `
+    <div class="order-car-preview">
+      <img src="${car.image || ''}" alt="${car.brand} ${car.model}" onerror="this.src='https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=700&q=80'">
+      <div>
+        <div style="font-weight: 800; font-size: 16px;">${car.brand} ${car.model}</div>
+        <div style="font-size: 12px; color: var(--text-muted);">${car.trim}</div>
+        <div style="font-weight: 700; color: var(--primary-red); margin-top: 4px;">${formatMoney(car.price)} ₽</div>
+      </div>
+    </div>
+
+    <form id="orderFormSubmit" class="order-modal-form">
+      <div class="order-form-group">
+        <label for="orderClientName">Ваше имя *</label>
+        <input type="text" id="orderClientName" class="order-form-input" value="${user.name || ''}" placeholder="Иван Иванов" required>
+      </div>
+
+      <div class="order-form-group">
+        <label for="orderClientPhone">Номер телефона для связи *</label>
+        <input type="tel" id="orderClientPhone" class="order-form-input" value="${user.phone || ''}" placeholder="+998 90 123 45 67" required>
+      </div>
+
+      <div class="order-form-group">
+        <label for="orderDealType">Желаемый формат сделки</label>
+        <select id="orderDealType" class="order-form-select">
+          <option value="Резерв онлайн">Резерв онлайн на 3 дня</option>
+          <option value="Покупка автомобиля">Прямая покупка в салоне</option>
+          <option value="Автокредит">Покупка в кредит / рассрочку</option>
+          <option value="Тест-драйв">Запись на тест-драйв</option>
+        </select>
+      </div>
+
+      <div class="order-form-group">
+        <label for="orderComment">Комментарий или пожелания</label>
+        <textarea id="orderComment" class="order-form-textarea" rows="2" placeholder="Например: удобное время для звонка..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+        <button type="button" id="cancelOrderModalBtn" class="btn-card" style="background: var(--bg-subtle); color: var(--text-main);">Отмена</button>
+        <button type="submit" class="btn-card btn-buy">Отправить заявку</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('cancelOrderModalBtn').addEventListener('click', closeOrderModal);
+
+  document.getElementById('orderFormSubmit').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const orderData = {
+      carId: String(car.id),
+      carName: `${car.brand} ${car.model}`,
+      carPrice: Number(car.price) || 0,
+      clientName: document.getElementById('orderClientName').value.trim(),
+      clientPhone: document.getElementById('orderClientPhone').value.trim(),
+      type: document.getElementById('orderDealType').value,
+      comment: document.getElementById('orderComment').value.trim()
+    };
+    closeOrderModal();
+    if (onSubmitOrder) onSubmitOrder(orderData);
+  });
+
+  modal.classList.add('open');
+}
+
+export function closeOrderModal() {
+  const modal = document.getElementById('orderModal');
+  if (modal) modal.classList.remove('open');
 }
 
 // Показ всплывающего уведомления (Toast)
@@ -274,18 +364,13 @@ export function showToast(message) {
   }, 3200);
 }
 
-// Обновление счетчика результатов
+// Обновление счетчиков
 export function updateResultsCount(count) {
   const el = document.getElementById('resultsCount');
-  if (el) {
-    el.textContent = `Найдено: ${count} авто`;
-  }
+  if (el) el.textContent = `Найдено: ${count} авто`;
 }
 
-// Обновление счетчика избранного в шапке
 export function updateFavoritesCount(count) {
   const el = document.getElementById('favCount');
-  if (el) {
-    el.textContent = count;
-  }
+  if (el) el.textContent = count;
 }
